@@ -1,0 +1,238 @@
+server.servlet.contextPath: /
+server.port: 8080
+server.package: cn.com.capinfo.ea.example.demo
+server.error.whitelabel.enabled: false
+server.error.include-stacktrace: NEVER # NEVER , ALWAYS,ON_TRACE_PARAM
+server.error.pageforstatus: false
+
+spring.profiles.active: development  #current active profile
+spring.application.name: DemoApplication
+spring.http.encoding.charset: UTF-8 # Charset of HTTP requests and responses. Added to the "Content-Type" header if not set explicitly.
+spring.http.encoding.enabled: true # Enable http encoding support.
+spring.http.encoding.force: true # Force the encoding to the configured charset on HTTP requests and responses.
+spring.http.encoding.forceRequest: true # Force the encoding to the configured charset on HTTP requests. Defaults to true when "force" has not been specified.
+spring.http.encoding.forceResponse: true # Force the encoding to the configured charset on HTTP responses.
+server.tomcat.uriEncoding: UTF-8
+#文件上传大小限制
+spring.servlet.multipart.maxFileSize: 100MB  #单文件大小
+spring.servlet.multipart.maxRequestSize: 200MB #单次请求的总文件大小
+spring.messages.basename: i18n/messages
+spring.h2.console.enabled: true
+spring.h2.console.path: /dbconsole
+#gorm
+grails.gorm.failOnError: false
+grails.gorm.autoFlus: false
+
+#EA spring security
+capinfo:
+  rest:
+    prefix:
+    unifiedJsonResult: true
+  mvc:
+    translateStringArgument: false
+    translateDomainArgument: false
+    autoTransJson2parameter: true
+  springsecurity:
+    active: true
+    frameOptions: disabled   #disabled,deny,sameOrigin
+    csrf: disable
+    cors: enable
+    corsConfig:
+      allowCredentials: true # true or false
+      allowedOrigins:  '*'  # * or http://localhost:8080
+      allowedHeaders:  '*'  #
+      allowedMethods:  '*' # GET,POST or *
+      corsPath: /**
+    headers:
+      - {Access-Control-Expose-Headers: WWW-Authenticate,Authorization,Set-Cookie}
+      - {Access-Control-Max-Age: 3600}
+    ajaxHeader: X-Requested-With
+    password:
+      encodeHashAsBase64: false
+      algorithm: bcrypt # bcrypt,pbkdf2,SHA-512,SHA-384,SHA-256,SHA-224,SHA-1,MD5,MD2
+    securityConfigType:  Requestmap  #目前只支持此种db模式
+    userLookup:
+      userDomainClassName: cn.com.capinfo.ea.example.demo.domain.core.BaseUser
+      authorityJoinClassName: cn.com.capinfo.ea.example.demo.domain.core.BaseUserBaseRole
+    authority.className: cn.com.capinfo.ea.example.demo.domain.core.BaseRole
+    requestMap.className: cn.com.capinfo.ea.example.demo.domain.core.Requestmap
+    apf:     #/** authenticationProcessingFilter */
+      filterProcessesUrl: /login/authenticate
+    auth:
+      loginFormUrl: /login/auth
+      alreadyLogin: /login/alreadyLogin #注释此行，则不再做当前session是否登录检查
+      useForward: false
+    adh:     #/*accessDeniedHandler*/
+      errorPage: /login/denied
+      ajaxErrorPage: /login/ajaxDenied
+      useForward: true
+    failureHandler:
+      defaultFailureUrl: /login/authfail
+      defaultAjaxFailureUrl: /login/authajaxfail
+    successHandler:
+      defaultTargetUrl: /workspace/index  #登录成功后，若没有rediretUrl则引导进此url
+      ajaxSuccessUrl: /login/ajaxSuccess
+      #如注释systemloginRecord 则不进行登录日志记录
+      systemloginRecord: cn.com.capinfo.ea.example.demo.domain.core.SystemLoginRecord
+    logout:
+      afterLogoutUrl: /
+      filterProcessesUrl: /logoff
+    sessionAuthenticationStrategy:
+      maximumSessions: -1  #//-1 为不限,1为只可登录一个用户实例   不可为0
+      maxSessionsPreventsLogin: false  #// true 为后登陆用户异常，false 为先登陆用户session过期
+      expiredUrl: /login/concurrentSession  #为先登陆用户session过期，引导至此路径
+    rest:
+      active: true
+      jsSpaCombine: true  #启用vue等js框架打包后合并发布
+      jsPathPrefix:       #js框架的router前缀列表
+        - /vue
+      jsRewritePath: /index.html  #js框架的入口地址
+      optionRequest: true #启用options预检请求的自动处理
+      login:
+        active: true
+        endpointUrl: /api/login
+        usernamePropertyName: username
+        passwordPropertyName: password
+        failureStatusCode: 401  # HttpServletResponse.SC_UNAUTHORIZED
+        useJsonCredentials: true
+        useRequestParamsCredentials: false
+      logout:
+        endpointUrl: /api/logout
+      token:
+        generation:
+          useSecureRandom: true
+          useUUID: false
+          jwt:
+            issuer: EA Spring Security REST Plugin
+            algorithm: HS256
+            jweAlgorithm: RSA-OAEP
+            encryptionMethod: A128GCM
+        storage:
+          jwt:
+            useSignedJwt: true
+            useEncryptedJwt: false
+            privateKeyPath: /home/.priavte
+            publicKeyPath: /home/.public
+            secret: yc-atlease256bits(The secret length must be at least 256 bits)
+            expiration: 3600
+        validation:
+          active: true
+          headerName: X-Auth-Token
+          endpointUrl:  /api/validate
+          tokenHeaderMissingStatusCode: 401   #HttpServletResponse.SC_UNAUTHORIZED
+          enableAnonymousAccess: false
+          useBearerToken: true
+        rendering:
+          usernamePropertyName: username
+          tokenPropertyName: access_token
+          authoritiesPropertyName:  roles
+  simplecaptcha:
+    fontSize: 30  #字体大小
+    height: 200
+    width: 200
+    length: 6 # 验证码字数
+    bottomPadding: 16 # 文字与底部的距离
+    lineSpacing: 10 # 用于混淆文本的对角线之间的距离
+    chars: ABCDEFGHIJKLMNOPQRSTUVWXYZ  # 文字的选取区间
+    font: Serif # 字体
+    storeInSession: true # 验证信息可选择存储与session或cookie中的一种
+  springsecuritycaptcha:
+    enabled: true   #启用
+    time: 5           # 过期时间 （分钟）
+    allowedNumberOfAttempts: 3  #无验证码尝试次数
+---
+spring:
+  profiles: development
+  thymeleaf:
+    cache: false
+    enabled: true
+    mode: html5
+    prefix: file:./server/src/main/resources/templates/thymeleaf3/   #different with bootRun & application
+    suffix: .html
+    encoding: UTF-8
+    servlet:
+      content-type: text/html
+  h2.console.enabled: true
+  h2.console.path: /dbconsole
+  datasource:
+    driverClassName: org.h2.Driver
+    url: jdbc:h2:mem:devDb;MVCC=TRUE;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+hibernate:
+  hbm2ddl:
+    auto: create  # one of create, create-drop, update, validate
+  dialect: org.hibernate.dialect.H2Dialect
+  cache:
+    queries: false
+    use_second_level_cache: true
+    use_query_cache: false
+    region.factory_class: org.hibernate.cache.ehcache.EhCacheRegionFactory
+logging.level.org.hibernate.SQL: DEBUG
+logging.level.org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+---
+spring:
+  profiles: test
+  thymeleaf:
+    cache: false
+    enabled: true
+    mode: html5
+    prefix: classpath:/templates/thymeleaf3/
+    suffix: .html
+    encoding: UTF-8
+    servlet:
+      content-type: text/html
+  h2.console.enabled: false
+  datasource:
+    driverClassName: org.h2.Driver
+    url: jdbc:h2:mem:testDb;MVCC=TRUE;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+hibernate:
+  hbm2ddl:
+    auto: create  # one of create, create-drop, update, validate
+  dialect: org.hibernate.dialect.H2Dialect
+  cache:
+    queries: false
+    use_second_level_cache: true
+    use_query_cache: false
+    region.factory_class: org.hibernate.cache.ehcache.EhCacheRegionFactory
+---
+spring:
+  profiles: production
+  thymeleaf:
+    cache: false
+    enabled: true
+    mode: html5
+    prefix: classpath:/templates/thymeleaf3/
+    suffix: .html
+    encoding: UTF-8
+    servlet:
+      content-type: text/html
+  h2.console.enabled: false
+  datasource:
+    driverClassName: org.h2.Driver
+    url: jdbc:h2:./prodDb;MVCC=TRUE;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    type: com.zaxxer.hikari.HikariDataSource   #org.apache.tomcat.jdbc.pool.DataSource  # com.alibaba.druid.pool.DruidDataSource
+    hikari:
+      initialSize: 1
+      minIdle: 3
+      maxActive: 100
+      maxWait: 60000
+      timeBetweenEvictionRunsMillis: 60000
+      minEvictableIdleTimeMillis: 30000
+      validationQuery: select 'x'
+      testWhileIdle: true
+      testOnBorrow: false
+      testOnReturn: false
+hibernate:
+  hbm2ddl:
+    auto: update  # one of create, create-drop, update, validate
+  dialect: org.hibernate.dialect.H2Dialect
+  cache:
+    queries: false
+    use_second_level_cache: true
+    use_query_cache: false
+    region.factory_class: org.hibernate.cache.ehcache.EhCacheRegionFactory

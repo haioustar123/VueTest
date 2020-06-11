@@ -1,0 +1,137 @@
+buildscript {
+    ext {
+        springBootVersion = '2.1.10.RELEASE'
+        gormVersion = '7.0.2.RELEASE'
+        groovyVersion = '2.5.6'
+        springVersion = '5.1.11.RELEASE'
+        springSecurityVersion = '5.1.7.RELEASE'
+        hibernate5Version = '5.4.10.Final'
+        hibernateValidatorVersion = '6.0.18.Final'
+        tomcatVersion = '9.0.27'
+        javaxServletVersion = '4.0.1'
+        dockerBuildDir = mkdir("${buildDir}/docker")
+    }
+
+    repositories {
+        maven { url "https://plugins.gradle.org/m2/" }
+        jcenter()
+        mavenCentral()
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath('gradle.plugin.com.palantir.gradle.docker:gradle-docker:0.22.1')
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+apply plugin: 'groovy'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'idea'
+apply plugin: 'java'
+apply plugin: 'com.palantir.docker'
+jar {
+    baseName = 'demo'
+    version = '0.0.1-SNAPSHOT'
+}
+bootJar {
+    baseName = 'demo'
+    version = '0.0.1-SNAPSHOT'
+}
+group = 'ea3.5-project'
+
+
+sourceCompatibility = 1.8
+
+repositories {
+    maven { url "http://repo.capinfo.com.cn/nexus/content/groups/public" }
+    maven { url "https://repo.grails.org/grails/core" }
+    maven { url "https://repo.spring.io/libs-milestone/" }
+    maven { url "https://repo.spring.io/plugins-release/" }
+    maven { url "http://central.maven.org/maven2/" }
+    maven { url "http://download.java.net/maven/2/" }
+    maven { url "http://repository.jboss.com/maven2/" }
+    mavenCentral()
+}
+
+
+dependencies {
+    compile('cn.com.capinfo.ea:capinfoEA-core:3.7.2')
+    compile('cn.com.capinfo.ea:capinfoEA-plugin-poi:3.7.1')
+    compile('cn.com.capinfo.ea:capinfoEA-plugin-simplecaptcha:3.7.0')
+    compile('cn.com.capinfo.ea:capinfoEA-plugin-springsecurity:3.7.3')
+    compile('cn.com.capinfo.ea:capinfoEA-plugin-springsecurity-captcha:3.7.1')
+    compile('cn.com.capinfo.ea:capinfoEA-plugin-springsecurity-rest:3.7.2')
+
+    compile("org.springframework.security:spring-security-core:${springSecurityVersion}")
+    compile("org.springframework.boot:spring-boot-starter-jdbc:${springBootVersion}")
+    compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}") {
+        exclude module: "spring-boot-starter-tomcat"
+        exclude module: "spring-boot-starter-logging"
+        exclude module: "logback-classic"
+    }
+    //thymeleaf
+    compile("org.springframework.boot:spring-boot-starter-thymeleaf:${springBootVersion}")
+    compile("org.thymeleaf:thymeleaf-spring5:3.0.11.RELEASE")
+    compile("org.thymeleaf:thymeleaf:3.0.6.RELEASE")
+    compile("nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:2.1.1")
+    compile("org.thymeleaf.extras:thymeleaf-extras-springsecurity5:3.0.4.RELEASE")
+    //end thymeleaf
+    runtime("com.h2database:h2:1.4.192")
+    compile("ch.qos.logback:logback-classic:1.2.3")
+    //compile("com.oracle:ojdbc6:12.1.0.2")
+    //compile("org.springframework.boot:spring-boot-autoconfigure:${springBootVersion}")
+    compile("org.codehaus.groovy:groovy:${groovyVersion}")
+    compile("org.codehaus.groovy:groovy-templates:${groovyVersion}")
+    compile("org.codehaus.groovy:groovy-sql:${groovyVersion}")
+    compile("org.codehaus.groovy:groovy-datetime:${groovyVersion}")
+    compile("org.codehaus.groovy:groovy-dateutil:${groovyVersion}")
+    testCompile("org.springframework.boot:spring-boot-starter-test:${springBootVersion}")
+    testCompile("org.springframework.boot:spring-boot-test-autoconfigure:${springBootVersion}")
+    testCompile("org.springframework.security:spring-security-test:${springSecurityVersion}")
+    //views
+    compile("org.webjars.bower:jquery:1.12.4")
+    compile("org.webjars.bower:bootstrap:4.3.1")
+    compile("org.webjars.bower:bootstrap:3.4.1")
+    compile("org.webjars.bower:bootstrap-fileinput:4.3.9")
+    compile("org.webjars.bower:bootstrap-table:1.15.4")
+    compile('org.webjars.bower:startbootstrap-sb-admin-2:4.0.7') {
+        exclude module: "fortawesome__fontawesome-free"
+        exclude module: "jquery.easing"
+        exclude module: "datatables.net"
+        exclude module: "datatables.net-bs4"
+        exclude module: "chart.js"
+        exclude module: "jquery"
+    }
+
+    compile("org.webjars:jquery:1.12.4")
+    compile("org.webjars:jquery-validation:1.19.0")
+    compile("org.webjars:bootstrap-datepicker:1.9.0")
+    compile("org.webjars:bootstrap-select:1.13.11")
+    compile('org.webjars:popper.js:1.15.0')
+    compile("org.webjars:zTree:3.5.28")
+
+    compile('org.webjars.npm:startbootstrap-coming-soon:5.0.6') {
+        exclude module: "fortawesome__fontawesome-free"
+        exclude module: "bootstrap"
+        exclude module: "jquery"
+    }
+}
+task prepareDocker(type: Copy, dependsOn: assemble) {
+    description = 'Copy files from src/main/docker to Docker temporal build directory'
+    group = 'Docker'
+    from 'src/main/docker'
+    into dockerBuildDir
+}
+
+task unpack(type: Copy, dependsOn: prepareDocker) {
+    dependsOn bootJar
+    from(zipTree(tasks.bootJar.outputs.files.singleFile))
+    into("build/dependency")
+}
+docker {
+    name "${project.group}/${bootJar.baseName}"
+    copySpec.from(tasks.unpack.outputs).into("dependency")
+    buildArgs(['DEPENDENCY': "dependency"])
+}

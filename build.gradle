@@ -1,0 +1,24 @@
+task copyClientResources(dependsOn: ':client:build', type: Copy) {
+    group = 'build'
+    description = 'Copy client resources into server'
+    mkdir "${project(':server').buildDir}/resources/main/public"
+    from "${project(':client').projectDir}/dist"
+    into "${project(':server').buildDir}/resources/main/public"
+}
+
+
+task assembleServerAndClient(type: Copy, dependsOn: ['copyClientResources']) {
+    group = 'build'
+    description = 'Build client'
+}
+task copyJarToBuild(type: Copy, dependsOn: [':server:assemble']) {
+    group = 'build'
+    description = 'Build combined server & client JAR/WAR'
+    from fileTree(dir: "${project(':server').buildDir}/libs/")
+    into "${rootProject.buildDir}"
+    doLast {
+        logger.quiet "JAR/WAR generated at ${rootProject.buildDir}. It combines the server and client projects."
+    }
+}
+copyClientResources.finalizedBy(copyJarToBuild)
+/*task(":server:assemble").mustRunAfter(copyClientResources)*/
